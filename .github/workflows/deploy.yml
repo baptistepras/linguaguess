@@ -1,0 +1,43 @@
+# Publishes the site to Cloudflare Pages on every push to main.
+#
+# The Pages project was created by direct upload (`wrangler pages deploy`), and
+# such a project cannot be attached to a repository afterwards, so the push is
+# wired to the same command instead. Running it by hand still works and deploys
+# exactly the same thing.
+#
+# Two repository secrets are required, under Settings > Secrets and variables >
+# Actions:
+#   CLOUDFLARE_API_TOKEN   token with Account > Cloudflare Pages > Edit and
+#                          Account > D1 > Edit
+#   CLOUDFLARE_ACCOUNT_ID  the 32-character account identifier
+
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:   # adds a "Run workflow" button, handy for a manual redeploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      # The dataset is validated before anything reaches the site: a bad snippet
+      # fails the run and the live version stays untouched.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node tools/validate.mjs
+      - run: node tools/smoke.mjs
+
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # --branch=main marks the upload as the production deployment, since a
+          # checkout leaves the repository on a detached HEAD with no branch name.
+          command: pages deploy --branch=main

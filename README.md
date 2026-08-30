@@ -1,5 +1,7 @@
 # 🌍 LinguaGuess
 
+### ▶ Play it at [linguaguess.pages.dev](https://linguaguess.pages.dev)
+
 A language identification game that runs entirely in the browser. Read a short
 passage of five to fifteen lines, work out which language it is, and see how fast
 you can do it. No framework, no build step, no external dependency.
