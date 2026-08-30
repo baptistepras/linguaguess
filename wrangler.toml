@@ -12,7 +12,7 @@ compatibility_date = "2026-01-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "linguaguess"
-database_id = "paste-your-database-id-here"
+database_id = "22a44f88-6508-43dc-9ef7-ce3a863ea4b2"
 
 # Preview deployments (any branch other than the production one) get no binding
 # unless it is repeated here, and the game simply reports the board as
@@ -21,4 +21,4 @@ database_id = "paste-your-database-id-here"
 # [[env.preview.d1_databases]]
 # binding = "DB"
 # database_name = "linguaguess"
-# database_id = "paste-your-database-id-here"
+# database_id = "22a44f88-6508-43dc-9ef7-ce3a863ea4b2"
