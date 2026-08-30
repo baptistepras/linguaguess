@@ -117,6 +117,12 @@ check(speed(0) === 1, 'the whole bonus is on the table at the first second');
 check(Math.abs(speed(3 * min + 20_000) - 0.5) < 1e-9,
   `exactly half of it is left at 3:20 (${speed(3 * min + 20_000)})`);
 check(speed(10 * min) === 0 && speed(30 * min) === 0, 'and none of it from 10:00 onwards');
+// A tab left open overnight is unusual but must not break anything.
+for (const [label, ms] of [['an hour', 60 * min], ['a day', 1440 * min], ['a week', 10080 * min]]) {
+  check(speed(ms) === 0 && LG.game.multiplierFor(7, ms, 10) === 1
+    && Math.round(700 * LG.game.multiplierFor(7, ms, 10)) === 700,
+    `after ${label}, a 7/10 is still worth exactly 700`);
+}
 check(speed(60_000) > speed(70_000), 'ten seconds always cost part of the bonus');
 
 let previousSpeed = Infinity;
@@ -158,6 +164,18 @@ for (let ms = 0; ms <= 12 * min; ms += 5_000) {
   previousScore = v;
 }
 check(previousScore === 900, 'a 9/10 decreases monotonically down to its floor of 900');
+
+/* ---------- the clock as it is written out ---------- */
+console.log('\n── time formatting ──');
+const shown = ms => LG.fmt.time(ms);
+check(shown(0) === '0:00', 'a match that has not started reads 0:00');
+check(shown(214_000) === '3:34', 'a normal match stays in m:ss (3:34)');
+check(shown(59 * min + 59_000) === '59:59', 'and keeps that form up to 59:59');
+check(shown(60 * min) === '1:00:00', 'the hour mark switches to h:mm:ss');
+check(shown(3_725_000) === '1:02:05', 'an hour and two minutes reads 1:02:05');
+check(shown(25 * 60 * min) === '25:00:00', 'a full day and an hour reads 25:00:00');
+check(!/^\d{3,}:\d\d$/.test(shown(25 * 60 * min)), 'never the unreadable 1500:00 form');
+check(shown(-5000) === '0:00', 'a negative duration cannot leak out');
 
 console.log(failed ? '\nFAILED' : '\nOK');
 process.exitCode = failed ? 1 : 0;

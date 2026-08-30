@@ -10,6 +10,12 @@ LG.leaderboard = (() => {
   const CACHE_MS = 60_000;         // one fetch per board per minute at most
   const TOP_ON_RESULTS = 10;
   const BOARD_SIZE = 100;
+  /* Past ten minutes the multiplier is stuck at 1, so a longer match still has a
+     perfectly valid score and time only breaks ties. A tab left open for days
+     would nonetheless exceed what the API accepts, so cap the reported duration
+     instead of letting an honest run be rejected. Must match MAX_MS server-side. */
+  const MAX_MS = 24 * 60 * 60 * 1000;
+  const clampMs = ms => Math.min(Math.max(0, Math.round(ms)), MAX_MS);
 
   const cache = new Map();         // "mode:difficulty" → { at, payload }
   const key = (mode, difficulty) => `${mode}:${difficulty}`;
@@ -45,7 +51,7 @@ LG.leaderboard = (() => {
      The `<=` is what gives seniority away: on an equal second the entry already
      on the board keeps its place and the newcomer lands just below. */
   function rankFor(entries, score, ms) {
-    const sec = t => Math.floor(t / 1000);
+    const sec = t => Math.floor(clampMs(t) / 1000);
     const better = entries.filter(e =>
       e.score > score || (e.score === score && sec(e.ms) <= sec(ms))).length;
     const rank = better + 1;
@@ -56,7 +62,7 @@ LG.leaderboard = (() => {
     const payload = await request(ENDPOINT, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ mode, difficulty, name, score, ms: Math.round(ms) }),
+      body: JSON.stringify({ mode, difficulty, name, score, ms: clampMs(ms) }),
     });
     // The response carries the refreshed board, so replace the cache with it.
     if (payload.ok) cache.set(key(mode, difficulty), { at: Date.now(), payload });

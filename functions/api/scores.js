@@ -17,7 +17,11 @@ const MAX_SCORE = 1100;      // a perfect run answered instantly
 const MIN_SCORE = 100;       // one correct answer; a blank match cannot be saved
 const MAX_NAME = 16;
 const MIN_MS = 3_000;        // a 10-text match cannot honestly be faster
-const MAX_MS = 6 * 60 * 60 * 1000;
+/* Past ten minutes the multiplier is pinned to 1, so a long match keeps a valid
+   score and the duration only breaks ties. A tab left open overnight is unusual
+   but honest, hence a whole day of room; the client caps its own report to the
+   same figure, so only a hand-crafted payload ever trips this. */
+const MAX_MS = 24 * 60 * 60 * 1000;
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), {
   status,

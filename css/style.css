@@ -660,8 +660,9 @@ button:focus-visible,
   font-size: 0.8rem;
   font-variant-numeric: tabular-nums;
   color: rgba(255, 255, 255, 0.6);
-  min-width: 46px;
+  min-width: 62px;   /* fits "1:02:05", the h:mm:ss form of a very long match */
   text-align: right;
+  white-space: nowrap;
 }
 .board-row.mine {
   background: rgba(251, 191, 36, 0.22);

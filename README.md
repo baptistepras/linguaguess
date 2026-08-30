@@ -74,6 +74,11 @@ Entries are ranked by score, then by time to the second, then by seniority: on a
 perfect tie the player already on the board keeps the place and the newcomer
 lands just below, so two rows are never truly equal.
 
+Past ten minutes the multiplier is pinned at ×1.00, so a match left running for
+hours keeps a perfectly valid score and its duration only breaks ties. Durations
+are shown as `h:mm:ss` once they pass the hour, and the game caps the figure it
+reports at a day, so a tab left open overnight is saved rather than refused.
+
 Scores are submitted as plain inserts, so two players finishing at the same second
 never overwrite each other and the ranking is always recomputed by the database.
 If the API cannot be reached, whether it is offline or the daily free quota is

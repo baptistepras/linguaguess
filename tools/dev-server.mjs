@@ -26,6 +26,8 @@ const BOARD_SIZE = 100;
 const MAX_NAME = 16;
 const MAX_SCORE = 1100;
 const MIN_SCORE = 100;
+const MIN_MS = 3_000;
+const MAX_MS = 24 * 60 * 60 * 1000;
 
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
@@ -82,7 +84,7 @@ async function handleApi(req, res, url) {
     const ms = Math.round(Number(body?.ms));
     const ok = validBoard(mode, difficulty) && name
       && Number.isInteger(score) && score >= MIN_SCORE && score <= MAX_SCORE
-      && Number.isFinite(ms) && ms >= 3000;
+      && Number.isFinite(ms) && ms >= MIN_MS && ms <= MAX_MS;
     if (!ok) return send(res, 400, { ok: false, error: 'invalid' });
 
     scores.push({ id: nextId++, mode, difficulty, name, score, ms });

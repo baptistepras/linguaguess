@@ -27,10 +27,14 @@ LG.LANGS = {
 
 /* Small formatters shared by the views. */
 LG.fmt = {
-  /* 214_000 → "3:34", 3_725_000 → "62:05" */
+  /* 214_000 → "3:34", 3_725_000 → "1:02:05". Hours appear only when there are
+     any, so an ordinary match keeps its short m:ss form. A tab left open all
+     night is rare but legal, and "1500:00" would be unreadable. */
   time(ms) {
     const total = Math.max(0, Math.floor(ms / 1000));
-    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+    const mm = Math.floor(total / 60) % 60, ss = String(total % 60).padStart(2, '0');
+    const hh = Math.floor(total / 3600);
+    return hh ? `${hh}:${String(mm).padStart(2, '0')}:${ss}` : `${mm}:${ss}`;
   },
   /* 0.7071 → "×0.71" in English, "×0,71" in French. */
   multiplier(value, uiLang) {
