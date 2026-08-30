@@ -597,12 +597,26 @@ button:focus-visible,
   font-size: 0.9rem;
 }
 
+/* Two columns, labels left and figures right, so the arithmetic reads as a
+   receipt: correct answers, base, time, multiplier, final. */
 .score-hero .breakdown {
-  margin-top: 6px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 16px;
+  margin: 14px auto 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
   font-size: 0.86rem;
-  font-variant-numeric: tabular-nums;
-  color: rgba(255, 255, 255, 0.66);
+  text-align: left;
 }
+.score-hero .breakdown dt { color: rgba(255, 255, 255, 0.66); }
+.score-hero .breakdown dd {
+  text-align: right;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.score-hero .breakdown dt:last-of-type,
+.score-hero .breakdown dd:last-of-type { color: #fff; font-weight: 800; }
 
 .results-grid {
   display: grid;

@@ -24,42 +24,55 @@ Each mode has two difficulties:
 
 ## Scoring
 
-A match is ten texts. Each correct answer is worth 100 raw points, so a perfect
-match is 1000 before the clock is taken into account.
+A match is ten texts, and each correct answer is worth 100 base points. **Accuracy
+decides the rank; speed only separates players who got the same number right.**
+
+Every tier owns the band between itself and the next one, so eight correct is
+worth 800 to 899 and nine correct 900 to 999, whatever the clock says. A rushed
+6/10 can therefore never overtake a plodding 8/10. The consequence is a score you
+can read: **873** means eight correct and 73% of the speed bonus still unspent.
+
+Speed fills that band through a multiplier, whose ceiling is exactly the gap up to
+the tier above (`899 / 800` for eight correct). The perfect run has no tier above
+it and gets a round ×1.10, for a maximum of **1100**. Nothing correct is worth
+nothing, however fast.
 
 **The clock only runs while you are deciding.** It starts when a text appears,
 stops the instant you answer, and starts again on the next text, so reading the
-feedback or pausing between rounds costs nothing. The badge dims while it is
-stopped. On that thinking time it applies a multiplier that never lets the
-maximum exceed 1000:
+feedback or pausing between rounds costs nothing.
 
-- the first **15 seconds per text**, which is 2 min 30 for a ten-text match, are
-  free and cost nothing at all;
-- past that budget the multiplier **halves every five minutes**;
-- it bottoms out at 1% of the raw score, which a perfect match reaches around
-  38 minutes.
+| Match duration | Speed left | 10/10 | 9/10 | 8/10 | 5/10 |
+|---|---|---|---|---|---|
+| instant | 100% | 1100 | 999 | 899 | 599 |
+| 1:00 | 87% | 1087 | 986 | 886 | 586 |
+| 2:30 | 63% | 1063 | 962 | 862 | 562 |
+| **3:20** | **50%** | **1050** | **950** | **850** | **550** |
+| 5:00 | 28% | 1028 | 928 | 828 | 528 |
+| 10:00 and beyond | 0% | 1000 | 900 | 800 | 500 |
 
-| Match duration | Multiplier | Perfect match scores |
-|---|---|---|
-| up to 2:30 | ×1.00 | 1000 |
-| 5:00 | ×0.71 | 707 |
-| 7:30 | ×0.50 | 500 |
-| 10:00 | ×0.35 | 354 |
-| 20:00 | ×0.09 | 88 |
+The bonus follows an S-curve that is whole at the first second, exactly half spent
+at **20 seconds per text**, and gone at **60 seconds per text**. It is nearly flat
+over the opening seconds, since reading takes time no matter who you are, steepest
+around the equilibrium where most players finish, and flat again as it lands on
+zero. All three modes share the same curve: the game is meant to be played
+internationally, and a Norwegian should not get more time on the Nordic board than
+on the Romance one.
 
-Around the five-minute mark, ten seconds are worth roughly sixteen points, which
-is enough to separate two players who answered equally well. The header shows the
-raw score and the running clock, and the multiplier appears next to the clock as
-soon as it starts biting, so the final number is never a surprise. The results
-screen spells the arithmetic out: `700 points ×0.81 for 4:00`.
+The header shows the base score, which only ever goes up, and the clock with the
+share of bonus still on the table. The results screen then spells the arithmetic
+out in full: correct answers, base score, time spent, multiplier, final score.
 
 ## Leaderboard
 
 Each mode and difficulty has its own top 100. At the end of a match, if the score
-reaches the board, a button offers to save it under a name of your choice. The
-results screen shows the top ten, and the trophy button on each menu card opens
-the full page, where the list scrolls to a hundred entries and can be filtered by
-name.
+reaches the board, a button offers to save it under a name of your choice. A
+blank match cannot be saved even when the board has room to spare. The results
+screen shows the top ten, and the trophy button on each menu card opens the full
+page, where the list scrolls to a hundred entries and can be filtered by name.
+
+Entries are ranked by score, then by time to the second, then by seniority: on a
+perfect tie the player already on the board keeps the place and the newcomer
+lands just below, so two rows are never truly equal.
 
 Scores are submitted as plain inserts, so two players finishing at the same second
 never overwrite each other and the ranking is always recomputed by the database.

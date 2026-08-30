@@ -41,9 +41,13 @@ LG.leaderboard = (() => {
   }
 
   /* Where a score would land, 1-based, or null if it misses the board.
-     Ties go to the faster match, matching the server's ordering. */
+     Same ordering as the server: score, then time to the second, then seniority.
+     The `<=` is what gives seniority away: on an equal second the entry already
+     on the board keeps its place and the newcomer lands just below. */
   function rankFor(entries, score, ms) {
-    const better = entries.filter(e => e.score > score || (e.score === score && e.ms <= ms)).length;
+    const sec = t => Math.floor(t / 1000);
+    const better = entries.filter(e =>
+      e.score > score || (e.score === score && sec(e.ms) <= sec(ms))).length;
     const rank = better + 1;
     return rank <= BOARD_SIZE ? rank : null;
   }

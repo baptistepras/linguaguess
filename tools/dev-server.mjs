@@ -24,6 +24,8 @@ const MODES = ['slavic', 'romance', 'nordic'];
 const DIFFICULTIES = ['easy', 'hard'];
 const BOARD_SIZE = 100;
 const MAX_NAME = 16;
+const MAX_SCORE = 1100;
+const MIN_SCORE = 100;
 
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
@@ -47,7 +49,10 @@ const cleanName = raw => typeof raw === 'string'
 
 const topEntries = (mode, difficulty) => scores
   .filter(s => s.mode === mode && s.difficulty === difficulty)
-  .sort((a, b) => b.score - a.score || a.ms - b.ms || a.id - b.id)
+  // Same ordering as the Function: score, time to the second, then seniority.
+  .sort((a, b) => b.score - a.score
+    || Math.floor(a.ms / 1000) - Math.floor(b.ms / 1000)
+    || a.id - b.id)
   .slice(0, BOARD_SIZE)
   .map((s, i) => ({ rank: i + 1, name: s.name, score: s.score, ms: s.ms }));
 
@@ -76,7 +81,7 @@ async function handleApi(req, res, url) {
     const score = Number(body?.score);
     const ms = Math.round(Number(body?.ms));
     const ok = validBoard(mode, difficulty) && name
-      && Number.isInteger(score) && score >= 0 && score <= 1000
+      && Number.isInteger(score) && score >= MIN_SCORE && score <= MAX_SCORE
       && Number.isFinite(ms) && ms >= 3000;
     if (!ok) return send(res, 400, { ok: false, error: 'invalid' });
 

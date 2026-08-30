@@ -225,12 +225,18 @@ LG.views = (() => {
 
     const mult = LG.game.currentMultiplier(m);
     const hero = div('score-hero glass-card');
+    const line = (label, value) => `<dt>${label}</dt><dd>${value}</dd>`;
     hero.innerHTML = `
       <div class="label">${t('finalScore')}</div>
       <div class="value">${m.final}</div>
-      <div class="sub">${t('outOf', m.rounds.length * LG.game.POINTS)} · ${t(m.difficulty)}</div>
-      <div class="breakdown">${t('breakdown', m.raw,
-        LG.fmt.multiplier(mult, LG.state.uiLang), LG.fmt.time(LG.game.elapsed(m)))}</div>
+      <div class="sub">${t('outOf', LG.game.MAX_SCORE)} · ${t(m.difficulty)}</div>
+      <dl class="breakdown">
+        ${line(t('resCorrect'), t('resCorrectVal', LG.game.correctCount(m), m.rounds.length))}
+        ${line(t('resBase'), m.raw)}
+        ${line(t('resTime'), LG.fmt.time(LG.game.elapsed(m)))}
+        ${line(t('resMult'), LG.fmt.multiplier(mult, LG.state.uiLang))}
+        ${line(t('resFinal'), m.final)}
+      </dl>
       ${isNewBest ? `<span class="best-badge">${t('newBest')}</span>` : ''}`;
     view.appendChild(hero);
 
@@ -310,6 +316,11 @@ LG.views = (() => {
     // Save control, or the reason there is none.
     if (match.savedRank != null) {
       container.appendChild(div('board-note saved', t('saved', match.savedRank)));
+      return;
+    }
+    // A blank match never reaches the board, even while it has room to spare.
+    if (match.final <= 0) {
+      container.appendChild(div('board-note', t('notScored')));
       return;
     }
     const rank = LG.leaderboard.rankFor(entries, match.final, LG.game.elapsed(match));

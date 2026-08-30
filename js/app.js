@@ -77,17 +77,18 @@ LG.app = (() => {
     document.documentElement.lang = s.uiLang;
   }
 
-  /* Live score and clock. The multiplier only appears once it starts biting,
-     so the player watches it fall instead of discovering it at the end. */
+  /* Live score and clock. The score shown is the raw one, which only ever goes
+     up. The multiplier itself would be misleading here, since its ceiling drops
+     as answers land, so the badge carries the speed gauge instead: it depends on
+     the clock alone and says plainly how much bonus is left to win. */
   function updateHeaderBadges() {
     const m = LG.state.match;
     if (!m) return;
     $('score-badge').textContent = LG.t('scoreLabel', m.raw);
-    const mult = LG.game.currentMultiplier(m);
+    const speed = LG.game.speedFactor(LG.game.elapsed(m), m.rounds.length);
     const time = LG.fmt.time(LG.game.elapsed(m));
-    $('time-text').textContent = mult < 1
-      ? `${LG.t('elapsedLabel', time)} ${LG.fmt.multiplier(mult, LG.state.uiLang)}`
-      : LG.t('elapsedLabel', time);
+    $('time-text').textContent =
+      `${LG.t('elapsedLabel', time)} · ${LG.t('speedLabel', Math.round(speed * 100))}`;
     // Dim the badge while the clock is stopped, so a frozen number reads as
     // deliberate rather than broken.
     $('time-badge').classList.toggle('paused', LG.game.isPaused(m));

@@ -50,7 +50,9 @@ for (const [mode, cfg] of Object.entries(LG.MODES)) {
     const expected = m.answers.filter(a => a.actual === a.guess).length * LG.game.POINTS;
     check(m.raw === expected, `${difficulty}: raw score arithmetic (${m.raw})`);
     check(LG.game.isPaused(m), `${difficulty}: the clock is stopped once the last answer is in`);
-    check(LG.game.finalScore(m) === m.raw, `${difficulty}: a fast match keeps every point`);
+    const fast = LG.game.finalScore(m);
+    check(fast >= m.raw && fast <= (m.raw === 1000 ? 1100 : m.raw + 99),
+      `${difficulty}: a fast match sits in its own band (${m.raw} → ${fast})`);
     const s = LG.game.summary(m);
     const total = cfg.langs.reduce((n, l) => n + s.perLang[l].total, 0);
     const cells = cfg.langs.reduce((n, a) => n + cfg.langs.reduce((k, g) => k + s.matrix[a][g], 0), 0);
@@ -91,7 +93,7 @@ console.log('\n── clock ──');
   }
   check(LG.game.elapsed(idle) < 250,
     `pauses stay out of the total (${LG.game.elapsed(idle)} ms for ten idle rounds)`);
-  check(LG.game.finalScore(idle) === 1000, 'idling between rounds never costs points');
+  check(LG.game.finalScore(idle) === 1100, 'idling between rounds never costs points');
 
   // Answering must be the only thing that stops the clock, otherwise a player
   // could park on a text and look the answer up for free.
@@ -107,24 +109,55 @@ console.log('\n── clock ──');
   check(LG.game.isPaused(open), 'and only the answer stops it');
 }
 
-/* ---------- time multiplier ---------- */
-console.log('\n── time multiplier ──');
+/* ---------- speed curve ---------- */
+console.log('\n── speed curve ──');
 const min = 60_000;
-const mult = ms => LG.game.timeMultiplier(ms, 10);
-check(mult(0) === 1 && mult(2.5 * min) === 1, 'the first 2 min 30 cost nothing');
-check(Math.abs(mult(5 * min) - 0.7071) < 0.001, `5 min keeps 71% (${mult(5 * min).toFixed(3)})`);
-check(Math.abs(mult(7.5 * min) - 0.5) < 0.001, `7 min 30 keeps half (${mult(7.5 * min).toFixed(3)})`);
-check(Math.abs(mult(20 * min) - 0.0884) < 0.001, `20 min keeps 9% (${mult(20 * min).toFixed(3)})`);
-check(mult(60 * min) === LG.game.MIN_MULTIPLIER, 'an abandoned match bottoms out at 1%');
-check(mult(4 * min) > mult(4 * min + 10_000), 'ten seconds always change the multiplier');
-const gap = Math.round(1000 * (mult(5 * min) - mult(5 * min + 10_000)));
-check(gap >= 10, `ten seconds are worth ${gap} points on a perfect match`);
-let previous = 2;
-for (let ms = 0; ms <= 45 * min; ms += 15_000) {
-  if (mult(ms) > previous) { check(false, 'multiplier never increases'); break; }
-  previous = mult(ms);
+const speed = ms => LG.game.speedFactor(ms, 10);
+check(speed(0) === 1, 'the whole bonus is on the table at the first second');
+check(Math.abs(speed(3 * min + 20_000) - 0.5) < 1e-9,
+  `exactly half of it is left at 3:20 (${speed(3 * min + 20_000)})`);
+check(speed(10 * min) === 0 && speed(30 * min) === 0, 'and none of it from 10:00 onwards');
+check(speed(60_000) > speed(70_000), 'ten seconds always cost part of the bonus');
+
+let previousSpeed = Infinity;
+for (let ms = 0; ms <= 12 * min; ms += 5_000) {
+  if (speed(ms) > previousSpeed) { check(false, `the bonus grows back at ${ms} ms`); break; }
+  previousSpeed = speed(ms);
 }
-check(previous === LG.game.MIN_MULTIPLIER, 'multiplier decreases monotonically to the floor');
+check(previousSpeed === 0, 'the bonus decreases monotonically to zero');
+
+/* ---------- score bands ---------- */
+console.log('\n── score bands ──');
+const scoreFor = (c, ms) => Math.round(100 * c * LG.game.multiplierFor(c, ms, 10));
+const bandTop = c => (c === 10 ? LG.game.MAX_SCORE : 100 * c + 99);
+
+for (let c = 1; c <= 10; c++) {
+  check(scoreFor(c, 0) === bandTop(c),
+    `${c}/10 answered instantly tops its band at ${scoreFor(c, 0)}`);
+  check(scoreFor(c, 10 * min) === 100 * c,
+    `${c}/10 answered slowly falls back to ${100 * c}`);
+}
+check(scoreFor(0, 0) === 0, 'nothing right is worth nothing, however fast');
+check(scoreFor(10, 0) === 1100, 'the maximum is a round 1100');
+
+// The point of the whole design: speed never crosses a tier.
+for (let c = 1; c < 10; c++) {
+  check(bandTop(c) < 100 * (c + 1),
+    `${c}/10 at full speed stays below ${c + 1}/10 at its slowest`);
+}
+check(scoreFor(6, 0) < scoreFor(8, 10 * min), 'a rushed 6/10 never beats a plodding 8/10');
+check(scoreFor(9, 0) < scoreFor(10, 10 * min), 'nor a rushed 9/10 a plodding sans-faute');
+
+// Landmarks a player can feel.
+check(scoreFor(10, 200_000) === 1050, `3:20 on a perfect run scores ${scoreFor(10, 200_000)}`);
+check(scoreFor(8, 200_000) === 850, `3:20 on 8/10 scores ${scoreFor(8, 200_000)}`);
+let previousScore = Infinity;
+for (let ms = 0; ms <= 12 * min; ms += 5_000) {
+  const v = scoreFor(9, ms);
+  if (v > previousScore) { check(false, `a 9/10 gains points by waiting at ${ms} ms`); break; }
+  previousScore = v;
+}
+check(previousScore === 900, 'a 9/10 decreases monotonically down to its floor of 900');
 
 console.log(failed ? '\nFAILED' : '\nOK');
 process.exitCode = failed ? 1 : 0;

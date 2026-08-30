@@ -6,17 +6,30 @@ LG.game = (() => {
   const ROUNDS = 10;
   const POINTS = 100;                 // raw points per correct answer
 
-  /* Time bonus. The clock runs from the first text to the last answer.
-     A grace budget covers honest reading, then the multiplier halves every
-     half-life, down to a 1% floor. Tuned per round so the curve keeps its
-     shape if ROUNDS ever changes:
-       grace  = 15 s per text  → 2 min 30 for a 10-text match
-       half   = 30 s per text  → 5 min
-     Landmarks for 10 texts: 2:30 keeps 100%, 5:00 keeps 71%, 10:00 keeps 35%,
-     20:00 keeps 9%, and the floor is reached around 38 minutes. */
-  const GRACE_MS_PER_ROUND = 15_000;
-  const HALF_LIFE_MS_PER_ROUND = 30_000;
-  const MIN_MULTIPLIER = 0.01;
+  /* Scoring. Accuracy decides the rank and speed only separates players who got
+     the same number right, so each score sits in the band between its own tier
+     and the next: 8 correct is worth 800 to 899, 9 correct 900 to 999. Reading a
+     score therefore tells you both halves at a glance.
+
+     Speed is worth the whole band, so its ceiling per tier is the gap up to the
+     tier above. The perfect run has no tier above and gets a round 1.10.
+
+     The speed factor runs from 1 at the first second to 0 once the bonus is
+     spent, passing through exactly one half at the equilibrium. Both times are
+     per text so the curve keeps its shape if ROUNDS ever changes:
+       equilibrium = 20 s per text → 3:20 for ten texts, half the bonus
+       zero        = 60 s per text → 10:00, no bonus left
+
+     The exponent is what makes the curve hit all three points exactly; it is
+     derived, never tuned. The shape is an S: nearly flat over the first seconds,
+     steepest around the equilibrium where most players finish, flat again as it
+     lands on zero. */
+  const EQUILIBRIUM_MS_PER_ROUND = 20_000;
+  const ZERO_MS_PER_ROUND = 60_000;
+  const CURVE_EXPONENT =
+    Math.log(0.5) / Math.log(EQUILIBRIUM_MS_PER_ROUND / ZERO_MS_PER_ROUND);
+  const PERFECT_MULTIPLIER = 1.1;   // 1000 → 1100, the only round number in the set
+  const MAX_SCORE = 1100;
 
   /* In-place Fisher-Yates. */
   function shuffle(arr) {
@@ -97,19 +110,36 @@ LG.game = (() => {
     match.roundStartedAt = null;
   }
 
-  /* 1.0 during the grace budget, then halves every half-life, floored at 1%. */
-  function timeMultiplier(elapsedMs, rounds = ROUNDS) {
-    const grace = GRACE_MS_PER_ROUND * rounds;
-    if (elapsedMs <= grace) return 1;
-    const decay = Math.pow(2, -(elapsedMs - grace) / (HALF_LIFE_MS_PER_ROUND * rounds));
-    return Math.max(MIN_MULTIPLIER, decay);
+  /* Share of the speed bonus still on the table, from 1 down to 0. */
+  function speedFactor(elapsedMs, rounds = ROUNDS) {
+    const zero = ZERO_MS_PER_ROUND * rounds;
+    if (elapsedMs <= 0) return 1;
+    if (elapsedMs >= zero) return 0;
+    return (1 + Math.cos(Math.PI * Math.pow(elapsedMs / zero, CURVE_EXPONENT))) / 2;
+  }
+
+  /* Ceiling for a given number of correct answers: everything up to one point
+     below the next tier, so the bands can never overlap. */
+  function maxMultiplier(correct) {
+    if (correct <= 0) return 1;
+    if (correct >= ROUNDS) return PERFECT_MULTIPLIER;
+    return (POINTS * (correct + 1) - 1) / (POINTS * correct);
+  }
+
+  function multiplierFor(correct, elapsedMs, rounds = ROUNDS) {
+    return 1 + (maxMultiplier(correct) - 1) * speedFactor(elapsedMs, rounds);
+  }
+
+  function correctCount(match) {
+    return match.raw / POINTS;
   }
 
   function currentMultiplier(match) {
-    return timeMultiplier(elapsed(match), match.rounds.length);
+    return multiplierFor(correctCount(match), elapsed(match), match.rounds.length);
   }
 
-  /* What the raw points are worth once the clock is taken into account. */
+  /* What the raw points are worth once the clock is taken into account.
+     Nothing right is worth nothing, however fast it was answered. */
   function finalScore(match) {
     return Math.round(match.raw * currentMultiplier(match));
   }
@@ -151,9 +181,10 @@ LG.game = (() => {
   }
 
   return {
-    ROUNDS, POINTS, MIN_MULTIPLIER,
+    ROUNDS, POINTS, MAX_SCORE, PERFECT_MULTIPLIER,
     buildPools, newMatch, answer, next, summary,
-    elapsed, isPaused, timeMultiplier, currentMultiplier, finalScore,
+    elapsed, isPaused, correctCount,
+    speedFactor, maxMultiplier, multiplierFor, currentMultiplier, finalScore,
     get pools() { return pools; },
   };
 })();

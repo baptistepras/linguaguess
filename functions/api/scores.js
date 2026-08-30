@@ -13,7 +13,8 @@ const MODES = ['slavic', 'romance', 'nordic'];
 const DIFFICULTIES = ['easy', 'hard'];
 const BOARD_SIZE = 100;      // rows returned to the client
 const KEEP_PER_BOARD = 500;  // rows retained per board, older overflow is pruned
-const MAX_SCORE = 1000;
+const MAX_SCORE = 1100;      // a perfect run answered instantly
+const MIN_SCORE = 100;       // one correct answer; a blank match cannot be saved
 const MAX_NAME = 16;
 const MIN_MS = 3_000;        // a 10-text match cannot honestly be faster
 const MAX_MS = 6 * 60 * 60 * 1000;
@@ -52,7 +53,7 @@ async function topEntries(db, mode, difficulty) {
   const { results } = await db
     .prepare(`SELECT name, score, ms FROM scores
                 WHERE mode = ?1 AND difficulty = ?2
-                ORDER BY score DESC, ms ASC, id ASC
+                ORDER BY score DESC, ms / 1000 ASC, id ASC
                 LIMIT ${BOARD_SIZE}`)
     .bind(mode, difficulty)
     .all();
@@ -87,7 +88,7 @@ export async function onRequestPost({ request, env }) {
   const ms = Number(body?.ms);
 
   const valid = board(mode, difficulty) && name
-    && Number.isInteger(score) && score >= 0 && score <= MAX_SCORE
+    && Number.isInteger(score) && score >= MIN_SCORE && score <= MAX_SCORE
     && Number.isFinite(ms) && ms >= MIN_MS && ms <= MAX_MS;
   if (!valid) return json({ ok: false, error: 'invalid' }, 400);
   if (!env.DB) return unavailable();
@@ -105,7 +106,7 @@ export async function onRequestPost({ request, env }) {
                  WHERE mode = ?1 AND difficulty = ?2
                    AND id NOT IN (SELECT id FROM scores
                                    WHERE mode = ?1 AND difficulty = ?2
-                                   ORDER BY score DESC, ms ASC, id ASC
+                                   ORDER BY score DESC, ms / 1000 ASC, id ASC
                                    LIMIT ${KEEP_PER_BOARD})`)
       .bind(mode, difficulty)
       .run();
