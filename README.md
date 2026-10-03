@@ -151,7 +151,7 @@ node tools/validate.mjs      # counts, lengths, forbidden characters, tier split
 node tools/smoke.mjs         # sampling balance, scoring, time multiplier
 ```
 
-## Licence
+## License
 
-MIT. The passages are original compositions and can be reused freely with
+MIT, see [LICENSE](LICENSE). The passages are original compositions and can be reused freely with
 attribution.
