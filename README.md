@@ -153,5 +153,4 @@ node tools/smoke.mjs         # sampling balance, scoring, time multiplier
 
 ## License
 
-MIT, see [LICENSE](LICENSE). The passages are original compositions and can be reused freely with
-attribution.
+[PolyForm Noncommercial 1.0.0](LICENSE). You may use, modify and share this code for any noncommercial purpose, such as personal, educational or hobby use. Commercial use is not allowed. The passages are original compositions and are covered by the same license.
